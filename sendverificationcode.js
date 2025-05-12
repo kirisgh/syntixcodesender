@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      "api-key": process.env.BREVO_API_KEY,
+      "api-key": process.env.BREVO_API_KEY,  // Using the environment variable
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
