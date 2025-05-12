@@ -1,39 +1,37 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 
-admin.initializeApp();
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
-// Set up Brevo SMTP transporter
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
   auth: {
-    user: "8cca5f001@smtp-brevo.com", // replace with your Brevo email
-    pass: "7j0VgshEn52X9c4R", // replace with your SMTP key
+    user: process.env.BREVO_EMAIL,
+    pass: process.env.BREVO_PASSWORD,
   },
 });
 
-exports.sendVerificationCode = functions.https.onCall(async (data, context) => {
-  const email = data.email;
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const { email } = req.body;
   const code = generateVerificationCode();
 
-  const mailOptions = {
-    from: '"Your App Name" <your-email@example.com>',
-    to: email,
-    subject: "Your Verification Code",
-    text: `Your verification code is: ${code}`,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
-    return { success: true, code };
-  } catch (error) {
-    console.error("Email send failed:", error);
-    throw new functions.https.HttpsError("internal", "Failed to send email.");
-  }
-});
+    await transporter.sendMail({
+      from: `"Your App Name" <${process.env.BREVO_EMAIL}>`,
+      to: email,
+      subject: "Your Verification Code",
+      text: `Your verification code is: ${code}`,
+    });
 
-function generateVerificationCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+    res.status(200).json({ success: true, code });
+  } catch (err) {
+    console.error("Email send failed:", err);
+    res.status(500).json({ error: "Failed to send email" });
+  }
 }
