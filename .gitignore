@@ -1,0 +1,16 @@
+# Node.js
+node_modules/
+
+# Environment variables file
+.env
+
+# Vercel/Netlify deployment files
+.vercel/
+.netlify/
+
+# Logs
+logs/
+*.log
+
+# MacOS specific
+.DS_Store
