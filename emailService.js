@@ -21,6 +21,8 @@ app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
+console.log("Sending to:", email);
+
 export function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -43,14 +45,14 @@ export async function sendVerificationCode(email) {
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Syntix" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Your Verification Code',
-    text: `Your verification code is: ${code}`,
+    subject: "Your 6-digit Verification Code",
+    text: `Your verification code is ${code}`,
+    html: `<p>Your verification code is <strong>${code}</strong></p>`,
   };
 
   await transporter.sendMail(mailOptions);
-  console.log("Sending to:", email);
   return code;
 }
 
