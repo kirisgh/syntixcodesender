@@ -17,11 +17,24 @@ app.post('/send-email', async (req, res) => {
   }
 });
 
+
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
-console.log("Sending to:", email);
+app.post('/', async (req, res) => {
+  const { email, code } = req.body;
+
+  // ✅ Make sure logging happens after the destructuring
+  console.log("Received request body:", req.body);
+  console.log("Email:", email);
+  console.log("Code:", code);
+
+  if (!email || !code) {
+    return res.status(400).json({ message: "Missing email or code" });
+  }
+});
 
 export function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
