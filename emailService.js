@@ -2,6 +2,12 @@ import nodemailer from 'nodemailer';
 
 const VERIFICATION_CODES = new Map(); // email => { code, expiresAt }
 
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
+
 export function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
