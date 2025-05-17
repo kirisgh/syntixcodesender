@@ -52,13 +52,13 @@ export async function sendVerificationCode(email) {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
+      pass: process.env.EMAIL_PASSWORD,
     },
     debug: true,
   });
 
   const mailOptions = {
-    from: `"Syntix" <${process.env.GMAIL_USER}>`,
+    from: process.env.GMAIL_USER,
     to: email,
     subject: "Your 6-digit Verification Code",
     text: `Your verification code is ${code}`,
