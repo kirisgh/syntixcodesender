@@ -38,8 +38,29 @@ app.post('/send-email', async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Your 6-digit Verification Code",
-      text: `Your verification code is ${code}`,
-      html: `<p>Your verification code is <strong>${code}</strong></p>`,
+      text: `Dear User,
+
+        Thank you for registering with Syntix.
+
+        Please use the following verification code to complete your email verification process:
+
+        Verification Code: ${code}
+
+        If you did not request this, please disregard this email.
+
+        Best regards,  
+        The Syntix Team`,
+
+    html: `
+    <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+        <p>Dear User,</p>
+        <p>Thank you for registering with <strong>Syntix</strong>.</p>
+        <p>Please use the following verification code to complete your email verification process:</p>
+        <p style="font-size: 20px; font-weight: bold; color: #2c3e50;">${code}</p>
+        <p>If you did not request this, please disregard this email.</p>
+        <p>Best regards,<br>The Syntix Team</p>
+    </div>
+    `
     };
 
     const info = await transporter.sendMail(mailOptions);
