@@ -1,8 +1,21 @@
 import nodemailer from 'nodemailer';
+import express from 'express';
 
 const VERIFICATION_CODES = new Map(); // email => { code, expiresAt }
 
-const PORT = process.env.PORT || 3000;
+const app = express();
+const PORT = process.env.PORT || 3000
+
+app.use(express.json());;
+
+app.post('/send-email', async (req, res) => {
+  try {
+    // Your nodemailer email sending code here
+    res.status(200).json({ message: 'Email sent!' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
