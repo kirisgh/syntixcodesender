@@ -143,7 +143,7 @@ ${ticketList}
   try {
     await transporter.sendMail({
       from: '"Syntix Event Bot" <yourgmail@gmail.com>',
-      to: 'yourgmail@gmail.com', // your email to receive
+      to: process.env.EMAIL_USER, // your email to receive
       subject: 'New Event Listing Submitted',
       text: emailBody
     });
