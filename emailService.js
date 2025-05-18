@@ -114,3 +114,43 @@ app.listen(PORT, () => {
 function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+app.post('/send-event-details', async (req, res) => {
+  const { location, time, selectedPackage, tickets } = req.body;
+
+  // Format tickets info as string
+  const ticketList = tickets.map((ticket, index) => 
+    `Ticket ${index + 1}: Type - ${ticket.type}, Price - ${ticket.price}`
+  ).join('\n');
+
+  const emailBody = `
+Event Location: ${location}
+Time: ${time}
+Selected Package: ${selectedPackage}
+
+Tickets:
+${ticketList}
+`;
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD, 
+    }
+  });
+
+  try {
+    await transporter.sendMail({
+      from: '"Syntix Event Bot" <yourgmail@gmail.com>',
+      to: 'yourgmail@gmail.com', // your email to receive
+      subject: 'New Event Listing Submitted',
+      text: emailBody
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Email send error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send email' });
+  }
+});
