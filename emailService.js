@@ -123,45 +123,62 @@ function generateCode() {
 }
 
 app.post('/send-event-details', upload.single('image'), async (req, res) => {
-  const { location, time, selectedPackage, tickets } = req.body;
-  const ticketList = JSON.parse(tickets || '[]').map((ticket, index) =>
-    `Ticket ${index + 1}: Type - ${ticket.type}, Price - ${ticket.price}`
-  ).join('\n');
+  try {
+    const { location, time, selectedPackage } = req.body;
+    const ticketsRaw = req.body.tickets;
 
-  const emailBody = `
+    // Validate required fields
+    if (!location || !time || !selectedPackage || !ticketsRaw) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Parse tickets safely
+    let tickets;
+    try {
+      tickets = JSON.parse(ticketsRaw);
+    } catch (parseError) {
+      console.error('❌ Failed to parse tickets JSON:', parseError);
+      return res.status(400).json({ success: false, error: 'Invalid tickets format' });
+    }
+
+    const ticketList = tickets.map((ticket, index) =>
+      `Ticket ${index + 1}: Type - ${ticket.type}, Price - ${ticket.price}`
+    ).join('\n');
+
+    const emailBody = `
 Event Location: ${location}
 Time: ${time}
 Selected Package: ${selectedPackage}
 
 Tickets:
 ${ticketList}
-  `;
+    `;
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    }
-  });
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      }
+    });
 
-  const mailOptions = {
-    from: '"Syntix Event Bot" <yourgmail@gmail.com>',
-    to: process.env.EMAIL_USER,
-    subject: 'New Event Listing Submitted',
-    text: emailBody,
-    attachments: req.file ? [{
-      filename: 'event-image.jpg',
-      content: req.file.buffer,
-      contentType: req.file.mimetype
-    }] : []
-  };
+    const mailOptions = {
+      from: `"Syntix Event Bot" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: 'New Event Listing Submitted',
+      text: emailBody,
+      attachments: req.file ? [{
+        filename: req.file.originalname || 'event-image.jpg',
+        content: req.file.buffer,
+        contentType: req.file.mimetype,
+      }] : [],
+    };
 
-  try {
+    console.log("📨 Sending event email with image?", !!req.file);
     await transporter.sendMail(mailOptions);
     res.json({ success: true });
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('❌ Email send error:', error);
     res.status(500).json({ success: false, error: 'Failed to send email' });
   }
 });
