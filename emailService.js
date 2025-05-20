@@ -14,7 +14,6 @@ const PORT = process.env.PORT || 3000;
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-
 app.use(express.json());
 
 // ✅ Send verification email
@@ -27,7 +26,7 @@ app.post('/send-email', async (req, res) => {
   }
 
   const code = generateCode();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // expires in 5 mins
+  const expiresAt = Date.now() + 5 * 60 * 1000; // expires in 5 minutes
   VERIFICATION_CODES.set(email, { code, expiresAt });
 
   console.log(`📤 Sending code ${code} to ${email}`);
@@ -47,32 +46,30 @@ app.post('/send-email', async (req, res) => {
       subject: "Your 6-digit Verification Code",
       text: `Dear User,
 
-        Thank you for registering with Syntix.
+Thank you for registering with Syntix.
 
-        Please use the following verification code to complete your email verification process:
+Please use the following verification code to complete your email verification process:
 
-        Verification Code: ${code}
+Verification Code: ${code}
 
-        If you did not request this, please disregard this email.
+If you did not request this, please disregard this email.
 
-        Best regards,  
-        The Syntix Team`,
-
-    html: `
-    <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
-        <p>Dear User,</p>
-        <p>Thank you for registering with <strong>Syntix</strong>.</p>
-        <p>Please use the following verification code to complete your email verification process:</p>
-        <p style="font-size: 20px; font-weight: bold; color: #2c3e50;">${code}</p>
-        <p>If you did not request this, please disregard this email.</p>
-        <p>Best regards,<br>The Syntix Team</p>
-    </div>
-    `
+Best regards,  
+The Syntix Team`,
+      html: `
+        <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+            <p>Dear User,</p>
+            <p>Thank you for registering with <strong>Syntix</strong>.</p>
+            <p>Please use the following verification code to complete your email verification process:</p>
+            <p style="font-size: 20px; font-weight: bold; color: #2c3e50;">${code}</p>
+            <p>If you did not request this, please disregard this email.</p>
+            <p>Best regards,<br>The Syntix Team</p>
+        </div>
+      `
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log("✅ Email sent:", info.response);
-
     return res.status(200).json({ message: 'Email sent!' });
   } catch (error) {
     console.error("❌ Error sending email:", error);
@@ -112,35 +109,28 @@ app.post('/verify', (req, res) => {
   return res.status(200).json({ message: "Code verified successfully" });
 });
 
-// ✅ Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
-});
-
-// 🔧 Utilities
-function generateCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
+// ✅ Submit event listing (image + ticket details)
 app.post('/send-event-details', upload.single('image'), async (req, res) => {
   try {
     const { location, time, selectedPackage } = req.body;
     const ticketsRaw = req.body.tickets;
 
-    // Validate required fields
+    // Check required fields
     if (!location || !time || !selectedPackage || !ticketsRaw) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
-    // Parse tickets safely
+    // 🛠️ Parse ticket JSON safely
     let tickets;
     try {
       tickets = JSON.parse(ticketsRaw);
-    } catch (parseError) {
-      console.error('❌ Failed to parse tickets JSON:', parseError);
-      return res.status(400).json({ success: false, error: 'Invalid tickets format' });
+      if (!Array.isArray(tickets)) throw new Error("Tickets is not an array");
+    } catch (err) {
+      console.error('❌ Failed to parse tickets JSON:', err);
+      return res.status(400).json({ success: false, error: 'Invalid tickets format (must be valid JSON array)' });
     }
 
+    // Format ticket list
     const ticketList = tickets.map((ticket, index) =>
       `Ticket ${index + 1}: Type - ${ticket.type}, Price - ${ticket.price}`
     ).join('\n');
@@ -164,7 +154,7 @@ ${ticketList}
 
     const mailOptions = {
       from: `"Syntix Event Bot" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // You can change this to notify another email
       subject: 'New Event Listing Submitted',
       text: emailBody,
       attachments: req.file ? [{
@@ -182,3 +172,13 @@ ${ticketList}
     res.status(500).json({ success: false, error: 'Failed to send email' });
   }
 });
+
+// ✅ Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});
+
+// 🔧 Code generator utility
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
