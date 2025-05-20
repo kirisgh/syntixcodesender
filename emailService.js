@@ -122,13 +122,19 @@ app.post('/send-event-details', upload.single('image'), async (req, res) => {
 
     // 🛠️ Parse ticket JSON safely
     let tickets;
-    try {
-      tickets = JSON.parse(ticketsRaw);
-      if (!Array.isArray(tickets)) throw new Error("Tickets is not an array");
-    } catch (err) {
-      console.error('❌ Failed to parse tickets JSON:', err);
-      return res.status(400).json({ success: false, error: 'Invalid tickets format (must be valid JSON array)' });
-    }
+      if (typeof ticketsRaw === 'string') {
+        try {
+          tickets = JSON.parse(ticketsRaw);
+        } catch (err) {
+          console.error('❌ Failed to parse tickets JSON string:', err);
+          return res.status(400).json({ success: false, error: 'Invalid tickets JSON string' });
+        }
+      } else if (Array.isArray(ticketsRaw)) {
+        tickets = ticketsRaw; // already parsed object
+      } else {
+        console.error('❌ tickets is not a string or array:', ticketsRaw);
+        return res.status(400).json({ success: false, error: 'Invalid tickets format (must be JSON array)' });
+      }
 
     // Format ticket list
     const ticketList = tickets.map((ticket, index) =>
