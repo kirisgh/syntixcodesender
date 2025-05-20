@@ -1,3 +1,6 @@
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import nodemailer from 'nodemailer';
 import express from 'express';
 import dotenv from 'dotenv';
@@ -7,6 +10,10 @@ const VERIFICATION_CODES = new Map(); // email => { code, expiresAt }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 
 app.use(express.json());
 
@@ -115,11 +122,9 @@ function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-app.post('/send-event-details', async (req, res) => {
+app.post('/send-event-details', upload.single('image'), async (req, res) => {
   const { location, time, selectedPackage, tickets } = req.body;
-
-  // Format tickets info as string
-  const ticketList = tickets.map((ticket, index) => 
+  const ticketList = JSON.parse(tickets || '[]').map((ticket, index) =>
     `Ticket ${index + 1}: Type - ${ticket.type}, Price - ${ticket.price}`
   ).join('\n');
 
@@ -130,24 +135,30 @@ Selected Package: ${selectedPackage}
 
 Tickets:
 ${ticketList}
-`;
+  `;
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD, 
+      pass: process.env.EMAIL_PASSWORD,
     }
   });
 
-  try {
-    await transporter.sendMail({
-      from: '"Syntix Event Bot" <yourgmail@gmail.com>',
-      to: process.env.EMAIL_USER, // your email to receive
-      subject: 'New Event Listing Submitted',
-      text: emailBody
-    });
+  const mailOptions = {
+    from: '"Syntix Event Bot" <yourgmail@gmail.com>',
+    to: process.env.EMAIL_USER,
+    subject: 'New Event Listing Submitted',
+    text: emailBody,
+    attachments: req.file ? [{
+      filename: 'event-image.jpg',
+      content: req.file.buffer,
+      contentType: req.file.mimetype
+    }] : []
+  };
 
+  try {
+    await transporter.sendMail(mailOptions);
     res.json({ success: true });
   } catch (error) {
     console.error('Email send error:', error);
